@@ -7,7 +7,6 @@ export class TextStream extends Transform {
   }
 
   _transform(chunk, encoding, callback) {
-    console.log('-');
     this.buffer += chunk.toString();
     const lastIndex = Math.max(
       this.buffer.lastIndexOf(' '),
@@ -18,7 +17,6 @@ export class TextStream extends Transform {
       this.buffer = this.buffer.slice(lastIndex + 1);
       this.push(chunkToProcess);
     }
-    //console.log('BUFFER NOW:', this.buffer);
     callback();
   }
 

@@ -10,12 +10,12 @@ function isFile(path) {
 }
 
 export function parseArguments(options) {
-  if (options.length < 1) {
-    throw Error('Необходимо передать путь к файлу');
+  if (options.length < 2) {
+    throw Error('Необходимо передать путь к входному и выходному файлам');
   }
-  const path = options[0];
-  if (!isFile(path)) {
+  const [input, output] = options;
+  if (!isFile(input)) {
     throw Error('Переданный аргумент не является путем к файлу');
   }
-  return { path };
+  return { input, output };
 }

@@ -1,29 +1,27 @@
 import fs from 'node:fs';
 import { TextStream } from './textStream.js';
-import { isMainThread, parentPort, Worker } from 'node:worker_threads';
-import { fileURLToPath } from 'url';
+import { Worker } from 'node:worker_threads';
 
-console.log('Hello, Otus!');
-
-export function processFile(path, threadsCount = 4) {
-  if (isMainThread) {
+export async function processFile(path, threadsCount = 4) {
+  return new Promise((resolveFileProcessing) => {
     let chunksToProcess = 0;
+    const resultIndex = new Map();
     Promise.all(
       Array(threadsCount)
         .fill()
         .map(() => {
-          return new Promise((resolve) => {
-            const worker = new Worker(fileURLToPath(import.meta.url));
+          return new Promise((resolveWorkerCreation) => {
+            const worker = new Worker('./src/processFileChunk.js');
             worker
               .on('online', () => {
-                resolve(worker);
+                resolveWorkerCreation(worker);
               })
-              .on('message', ({ chunk }) => {
-                console.log('-- FIle Chunk start --');
-                console.log('Chunk:', chunk.toString().trim());
-                console.log('-- FIle Chunk end --');
+              .on('message', ({ wordsIndex }) => {
+                for (const [word, count] of Object.entries(wordsIndex)) {
+                  resultIndex.set(word, (resultIndex.get(word) || 0) + count);
+                }
                 if (!--chunksToProcess) {
-                  process.exit();
+                  resolveFileProcessing(resultIndex);
                 }
               });
           });
@@ -43,9 +41,5 @@ export function processFile(path, threadsCount = 4) {
         ++chunksToProcess;
       });
     });
-  } else {
-    parentPort.on('message', ({ chunk }) => {
-      parentPort.postMessage({ chunk });
-    });
-  }
+  });
 }
